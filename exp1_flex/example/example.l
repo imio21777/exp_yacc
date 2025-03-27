@@ -36,10 +36,6 @@ STRCON     \"([^\"\\]|\\.)*\"
 [ \t\r\n]+          ;   // 忽略空白符
 .                   { printf("TOKEN: UNKNOWN (%s)\n", yytext); }
 
-
-
-
-
 %%
 
 int main(int argc, char *argv[]) {
