@@ -1,4 +1,4 @@
-# Flex & Yacc 实验
+# Flex & Yacc 实验 & 附保姆级教程
 
 【Flex & Yacc 简介】
 `Flex` 和 `Yacc` 是一组经典的编译原理工具，分别用于实现词法分析器（Lexer）和语法分析器（Parser）：
