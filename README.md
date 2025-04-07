@@ -556,8 +556,241 @@ yacc 在读完 `x` 后看到 `y`，此时可能会发生冲突：
 
 要运行语法树示例,
 ```bash
-
+cd examples/ast_example
+bash run.sh
 ```
+可以查看产生了两个文件`ast.dot`和`ast.png`，内容类似：
+```dot
+digraph AST {
+  node [fontname="Arial"];
+  node10 [label="CompUnit", shape=box, style=filled, fillcolor=lightblue];
+  node10 -> node2 [label="decl"];
+  node2 [label="Decl", shape=box];
+  node2 -> node1 [label="decl"];
+  node1 [label="ConstDecl\nident: a\ntype: int\nvalue: 1", shape=box, style=filled, fillcolor=lightyellow];
+  node10 -> node9 [label="main_func_def"];
+  node9 [label="MainFuncDef\nint main()", shape=box, style=filled, fillcolor=lightcoral];
+  node9 -> node5 [label="block"];
+  node5 [label="Block", shape=box, style=filled, fillcolor=lightgrey];
+  node5 -> node4 [label="item0"];
+  node4 [label="Decl", shape=box];
+  node4 -> node3 [label="decl"];
+  node3 [label="VarDecl\nident: c\ntype: int", shape=box, style=filled, fillcolor=lightgreen];
+  node5 -> node7 [label="item1"];
+  node7 [label="Stmt\nkind: ASSIGNMENT", shape=box, style=filled, fillcolor=lightskyblue];
+  node7 -> node6 [label="assignment"];
+  node6 [label="Assignment\nident: c\nis_getint: true", shape=box, style=filled, fillcolor=lightsalmon];
+  node5 -> node8 [label="item2"];
+  node8 [label="Stmt\nkind: RETURN\nident: c", shape=box, style=filled, fillcolor=lightskyblue];
+}
+```
+
+#### 自定义 AST 语法树
+
+本节将讲解如何在 Yacc 项目中自定义抽象语法树（AST）结构，并通过 Graphviz 将其可视化，帮助我们更好地理解语法分析结果。
+
+##### 1. 定义 AST 节点结构
+
+首先，我们创建一个头文件 `ast.h` 来定义 AST 的基本结构。以 `BaseAST` 为根节点，其他类型节点继承它。
+
+```cpp
+// ast.h
+#pragma once
+#include <string>
+#include <sstream>
+
+class BaseAST {
+public:
+    int node_id;
+
+    BaseAST() : node_id(NewNodeID()) {}
+    virtual ~BaseAST() = default;
+
+    // 将节点以 DOT 语言格式输出
+    virtual std::string DumpDOT() const = 0;
+
+    // 获取节点 ID（用于连边）
+    virtual int GetNodeID() const { return node_id; }
+
+protected:
+    static int node_id_counter;
+    static int NewNodeID() { return node_id_counter++; }
+};
+
+// 静态成员初始化
+inline int BaseAST::node_id_counter = 0;
+```
+
+##### 2. 在 yacc.y 中配置语义值
+
+**（1）引入头文件与全局变量**
+
+```c++
+#include <memory>
+#include "ast.h"
+
+std::unique_ptr<BaseAST> root; // 语法分析完成后的 AST 根节点
+```
+
+**（2）定义 `%union`**
+
+注意：由于 `%union` 不能直接使用具有非平凡构造函数的类型（如 `std::unique_ptr<T>`），因此这里使用原始指针。
+
+```yacc
+%union {
+    BaseAST* ast_ptr;    // 指向 AST 节点
+    int int_val;         // 整数字面量
+    char* str_val;       // 标识符和字符串字面量
+}
+```
+
+**（3）定义终结符和非终结符的类型**
+
+```yacc
+%token <str_val> IDENT STR_CONST
+%token <int_val> INT_CONST
+
+%type <ast_ptr> CompUnit Decl ConstDecl VarDecl
+%type <ast_ptr> BType MainFuncDef Block BlockItems BlockItem
+%type <ast_ptr> Stmt Assignment Number
+```
+
+终结符 `IDENT` 是字符串，非终结符统一使用 `ast_ptr` 指向 AST 节点。
+
+---
+
+##### 3. 构建 AST 节点的语义动作
+
+**（1）在 Lex 中设置词法值**
+
+```lex
+char* my_strdup(const char* s) {
+    char* p = (char*)malloc(strlen(s) + 1);
+    if (p) strcpy(p, s);
+    return p;
+}
+
+{IDENFR}     { yylval.str_val = my_strdup(yytext); return IDENT; }
+{INT_CONST}  { yylval.int_val = atoi(yytext); return INT_CONST; }
+```
+
+**（2）在 Yacc 中创建 AST 节点**
+
+```yacc
+Number :
+    INT_CONST {
+        auto ast = new NumberAST();
+        ast->value = $1;
+        $$ = ast;
+    }
+    ;
+
+ConstDecl :
+    CONST BType IDENT '=' Number {
+        auto ast = new ConstDeclAST();
+        ast->type = TYPE_INT;       // 假设默认类型为 int
+        ast->ident = $3;            // 标识符名称
+        auto number = dynamic_cast<NumberAST*>($5);
+        if (number) ast->value = number->value;
+        $$ = ast;
+    }
+    ;
+```
+
+**注意：** 使用 `$3` 而不是 `yytext`，避免词法值错误；构建完成后，请确保节点最终有地方释放（如交给 `root`）。
+
+##### 4. 编写主函数并解析生成 AST
+
+```cpp
+// main.cpp
+#include <iostream>
+#include <fstream>
+#include "ast.h"
+
+extern FILE* yyin;
+extern int yyparse();
+extern int yydebug;
+extern std::unique_ptr<BaseAST> root;
+
+int main(int argc, char* argv[]) {
+    bool debug_mode = false;
+    std::string input_file, output_file;
+
+    // 命令行参数处理
+    for (int i = 1; i < argc; ++i) {
+        std::string arg = argv[i];
+        if (arg == "-d" || arg == "--debug") {
+            debug_mode = true;
+        } else if (arg == "-o" && i + 1 < argc) {
+            output_file = argv[++i];
+        } else if (arg[0] != '-') {
+            input_file = arg;
+        } else {
+            std::cerr << "Unknown option: " << arg << std::endl;
+            return 1;
+        }
+    }
+
+    yydebug = debug_mode ? 1 : 0;
+
+    if (!input_file.empty()) {
+        yyin = fopen(input_file.c_str(), "r");
+        if (!yyin) {
+            std::cerr << "Cannot open input file: " << input_file << std::endl;
+            return 1;
+        }
+    } else {
+        yyin = stdin;
+    }
+
+    if (yyparse() != 0) {
+        std::cerr << "Parsing failed." << std::endl;
+        return 1;
+    }
+
+    // 打印 AST（DOT 格式）
+    if (root) {
+        std::ofstream out(output_file.empty() ? "ast.dot" : output_file);
+        out << "digraph AST {\n";
+        out << root->DumpDOT();
+        out << "}\n";
+        out.close();
+        std::cout << "AST written to " << (output_file.empty() ? "ast.dot" : output_file) << std::endl;
+    }
+
+    if (yyin != stdin) fclose(yyin);
+    return 0;
+}
+```
+
+---
+
+##### 5. 使用 Graphviz 可视化 AST
+
+我们在 AST 节点中实现了 `DumpDOT()` 方法来输出 Graphviz DOT 格式：
+
+```cpp
+std::string BlockItemAST::DumpDOT() const {
+    std::stringstream ss;
+    ss << "  node" << node_id << " [label=\"BlockItem\", shape=box];\n";
+    
+    if (item) {
+        ss << "  node" << node_id << " -> node" << item->GetNodeID()
+           << " [label=\"item\"];\n";
+        ss << item->DumpDOT();
+    }
+    return ss.str();
+}
+```
+
+然后使用如下命令可生成图片：
+
+```sh
+dot -Tpng ast.dot -o ast.png
+```
+
+
+
 
 
 
