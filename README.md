@@ -107,11 +107,12 @@ diff your_output.txt expected_output.txt
 - `flex`：词法分析器生成器
 - `bison`：语法分析器生成器（GNU 版本的 Yacc）
 - `gcc` 和 `g++`：GNU C/C++ 编译器
+- `graphviz`：画图工具，可以解析`dot`文件生成可视化语法树
 
 在 Ubuntu/Debian 系统中，可以使用以下命令安装所需工具：
 ```bash
 sudo apt update
-sudo apt install -y flex bison build-essential
+sudo apt install -y flex bison build-essential graphviz
 ```
 
 安装完成后，可以通过以下命令验证工具是否安装成功：
