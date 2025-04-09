@@ -65,10 +65,8 @@ INTTK int
 
 3. 要求同学们输出的语法成分包括: 
     ```
-    CompUnit Decl ConstDecl VarDecl
+    CompUnit ConstDecl VarDecl
     FuncDef MainFuncDef Block Stmt
-    FuncFParams FuncRParams
-    Exp Cond
     ```
 ### AST实验输出
 
