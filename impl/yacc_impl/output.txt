@@ -1,7 +1,0 @@
-<ConstDecl>
-<VarDecl>
-<Stmt>
-<Stmt>
-<Block>
-<MainFuncDef>
-<CompUnit>
