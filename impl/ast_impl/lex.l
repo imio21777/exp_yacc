@@ -24,47 +24,47 @@ COMMENT    "//"[^\n]*
 
 %%
 
-"const"             { return CONST;}
-"int"               { return INT;}
-"return"            { return RETURN;}
-"printf"            { return PRINTF;}
-"getint"            { return GETINT;}
-"main"              { return MAIN;}
-"break"             { return BREAK;}
-"continue"          { return CONTINUE;}
-"if"                { return IF;}
-"else"              { return ELSE;}
-"while"             { return WHILE;}
-"void"              { return VOID;}
+"const"             { printf("CONSTTK const\n"); return CONST; }
+"int"               { printf("INTTK int\n"); return INT; }
+"return"            { printf("RETURNTK return\n"); return RETURN; }
+"printf"            { printf("PRINTFTK printf\n"); return PRINTF; }
+"getint"            { printf("GETINTTK getint\n"); return GETINT; }
+"main"              { printf("MAINTK main\n"); return MAIN; }
+"break"             { printf("BREAKTK break\n"); return BREAK; }
+"continue"          { printf("CONTINUETK continue\n"); return CONTINUE; }
+"if"                { printf("IFTK if\n"); return IF; }
+"else"              { printf("ELSETK else\n"); return ELSE; }
+"while"             { printf("WHILETK while\n"); return WHILE; }
+"void"              { printf("VOIDTK void\n"); return VOID; }
 
-"="                 { return ASSIGN;}
-"{"                 { return LBRACE; }
-"}"                 { return RBRACE; }
-"("                 { return LPARENT; }
-")"                 { return RPARENT; }
-";"                 { return SEMICN; }
-","                 { return COMMA; }
-"["                 { return LBRACK; }
-"]"                 { return RBRACK; }
+"="                 { printf("ASSIGN =\n"); return ASSIGN; }
+"{"                 { printf("LBRACE {\n"); return LBRACE; }
+"}"                 { printf("RBRACE }\n"); return RBRACE; }
+"("                 { printf("LPARENT (\n"); return LPARENT; }
+")"                 { printf("RPARENT )\n"); return RPARENT; }
+";"                 { printf("SEMICN ;\n"); return SEMICN; }
+","                 { printf("COMMA ,\n"); return COMMA; }
+"["                 { printf("LBRACK [\n"); return LBRACK; }
+"]"                 { printf("RBRACK ]\n"); return RBRACK; }
 
-"!"                 { return NOT; }
-"&&"                 { return AND; }
-"||"                 { return OR; }
-"+"                 { return PLUS; }
-"-"                 { return MINU; }
-"*"                 { return MULT; }
-"/"                 { return DIV; }
-"%"                 { return MOD; }
-"<"                 { return LSS; }
-"<="                 { return LEQ; }
-">"                 { return GRE; }
-">="                 { return GEQ; }
-"=="                 { return EQL; }
-"!="                 { return NEQ; }
+"!"                 { printf("NOT !\n"); return NOT; }
+"&&"                { printf("AND &&\n"); return AND; }
+"||"                { printf("OR ||\n"); return OR; }
+"+"                 { printf("PLUS +\n"); return PLUS; }
+"-"                 { printf("MINU -\n"); return MINU; }
+"*"                 { printf("MULT *\n"); return MULT; }
+"/"                 { printf("DIV /\n"); return DIV; }
+"%"                 { printf("MOD %%\n"); return MOD; }
+"<"                 { printf("LSS <\n"); return LSS; }
+"<="                { printf("LEQ <=\n"); return LEQ; }
+">"                 { printf("GRE >\n"); return GRE; }
+">="                { printf("GEQ >=\n"); return GEQ; }
+"=="                { printf("EQL ==\n"); return EQL; }
+"!="                { printf("NEQ !=\n"); return NEQ; }
 
-{INTCON}            { yylval.int_val = strtol(yytext, nullptr, 0); return INT_CONST; }
-{IDENFR}            { yylval.str_val = my_strdup(yytext); return IDENT; }
-{STRCON}            { yylval.str_val = my_strdup(yytext); return STR_CONST; }
+{INTCON}            { printf("INTCON %s\n", yytext); yylval.int_val = strtol(yytext, nullptr, 0); return INT_CONST; }
+{IDENFR}            { printf("IDENFR %s\n", yytext); yylval.str_val = my_strdup(yytext); return IDENT; }
+{STRCON}            { printf("STRCON %s\n", yytext); yylval.str_val = my_strdup(yytext); return STR_CONST; }
 {COMMENT}           {;}
 
 [ \t\r\n]+          ;   // 忽略空白符
