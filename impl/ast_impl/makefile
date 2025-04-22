@@ -16,7 +16,7 @@ clean:
 	rm -f parser lex.yy.c yacc.tab.c yacc.tab.h *.dot *.png *.o
 
 test: parser
-	./parser test.txt -o ast.dot
+	./parser ../../tests/ast_tests/testfile.txt -o ast.dot
 	dot -Tpng ast.dot -o ast.png
 	display ast.png
 
