@@ -62,9 +62,9 @@ COMMENT    "//"[^\n]*
 "=="                { return EQL; }
 "!="                { return NEQ; }
 
-{INTCON}            { printf("INTCON %s\n", yytext); yylval.int_val = strtol(yytext, nullptr, 0); return INT_CONST; }
-{IDENFR}            { printf("IDENFR %s\n", yytext); yylval.str_val = my_strdup(yytext); return IDENT; }
-{STRCON}            { printf("STRCON %s\n", yytext); yylval.str_val = my_strdup(yytext); return STR_CONST; }
+{INTCON}            { yylval.int_val = strtol(yytext, nullptr, 0); return INT_CONST; }
+{IDENFR}            { yylval.str_val = my_strdup(yytext); return IDENT; }
+{STRCON}            { yylval.str_val = my_strdup(yytext); return STR_CONST; }
 {COMMENT}           {;}
 
 [ \t\r\n]+          ;   // 忽略空白符
