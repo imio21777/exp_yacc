@@ -1,23 +1,33 @@
-CC = g++
-CFLAGS = -std=c++17 -Wall -g -Wno-register
+# Makefile for AST implementation
+
+CXX = g++
+CXXFLAGS = -std=c++17 -Wall -Wextra -Wno-unused-function
+
+FLEX = flex
+BISON = bison
+
+# 源文件和目标文件
+SRCS = yacc.tab.c lex.yy.c
+OBJS = yacc.tab.o lex.yy.o
 
 all: parser
 
-parser: lex.yy.c yacc.tab.c main.cpp
-	$(CC) $(CFLAGS) -o parser lex.yy.c yacc.tab.c main.cpp
+parser: $(OBJS)
+	$(CXX) $(CXXFLAGS) -o $@ $^
 
-yacc.tab.c yacc.tab.h: yacc.y
-	bison -d yacc.y
+yacc.tab.o: yacc.tab.c yacc.tab.h ast.h
+	$(CXX) $(CXXFLAGS) -c -o $@ $<
+
+lex.yy.o: lex.yy.c yacc.tab.h ast.h
+	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
 lex.yy.c: lex.l yacc.tab.h
-	flex lex.l
+	$(FLEX) $<
+
+yacc.tab.c yacc.tab.h: yacc.y
+	$(BISON) -d -v $<
 
 clean:
-	rm -f parser lex.yy.c yacc.tab.c yacc.tab.h *.dot *.png *.o
+	rm -f parser lex.yy.c yacc.tab.c yacc.tab.h ast.dot ast.png yacc.output *.o
 
-test: parser
-	./parser ../../tests/ast_tests/testfile.txt -o ast.dot
-	dot -Tpng ast.dot -o ast.png
-	display ast.png
-
-.PHONY: all clean test
+.PHONY: all clean 
